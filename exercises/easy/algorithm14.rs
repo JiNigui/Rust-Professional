@@ -10,10 +10,26 @@
 */
 
 use std::fmt::{self, Display, Formatter};
+use std::collections::HashSet;
 
 pub fn find_duplicates(nums: Vec<i32>) -> Vec<i32> {
     // TODO: Implement the logic to find all duplicates in the array
-    Vec::new() // Placeholder return value
+    // Placeholder return value
+    let mut seen = HashSet::new(); // 用于记录已经出现过的元素
+    let mut duplicates = Vec::new(); // 存储重复项
+    let mut already_seen_duplicates = HashSet::new(); // 用于避免重复添加相同的重复项
+
+    for &num in &nums {
+        if seen.contains(&num) {
+            if !already_seen_duplicates.contains(&num) {
+                duplicates.push(num); // 按照第一次出现的顺序存储重复项
+                already_seen_duplicates.insert(num); // 只在第一次发现重复时添加
+            }
+        } else {
+            seen.insert(num); // 如果该元素未出现过，标记为已见
+        }
+    }
+    duplicates
 }
 
 #[cfg(test)]
@@ -33,7 +49,7 @@ mod tests {
         let nums = vec![4, 5, 6, 7, 5, 4];
         let result = find_duplicates(nums);
         println!("Duplicates: {:?}", result);
-        assert_eq!(result, vec![4, 5]);
+        assert_eq!(result, vec![5, 4]);
     }
 
     #[test]

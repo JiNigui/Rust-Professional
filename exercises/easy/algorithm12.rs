@@ -10,12 +10,31 @@
 */
 
 use std::fmt::{self, Display, Formatter};
-
 pub fn is_palindrome(s: String) -> bool {
     // TODO: Implement the logic to check if the string is a palindrome
-    false // Placeholder return value
-}
+    // Placeholder return value
 
+    // Normalize the string: convert to lowercase and remove non-alphabetical characters
+    let normalized: String = s
+        .chars()
+        .filter(|c| c.is_alphabetic())
+        .map(|c| c.to_ascii_lowercase())
+        .collect();
+
+    // Check if the normalized string is a palindrome
+    let mut left = 0;
+    let mut right = normalized.len() - 1;
+
+    while left < right {
+        if normalized.chars().nth(left) != normalized.chars().nth(right) {
+            return false;
+        }
+        left += 1;
+        right -= 1;
+    }
+
+    true
+}
 #[cfg(test)]
 mod tests {
     use super::*;

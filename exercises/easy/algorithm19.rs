@@ -13,7 +13,39 @@ use std::fmt::{self, Display, Formatter};
 
 pub fn fib(n: i32) -> i32 {
     // TODO: Implement the logic to calculate the nth Fibonacci number using matrix exponentiation
-    0 // Placeholder return value
+    // Placeholder return value
+    if n == 0 {
+        return 0;
+    }
+    if n == 1 {
+        return 1;
+    }
+
+    let mut result = [[1, 0], [0, 1]]; // Identity matrix
+    let mut base = [[1, 1], [1, 0]];   // Transformation matrix
+    let mut exponent = n - 1;
+
+    while exponent > 0 {
+        if exponent % 2 == 1 {
+            result = matrix_multiply(&result, &base);
+        }
+        base = matrix_multiply(&base, &base);
+        exponent /= 2;
+    }
+
+    result[0][0]
+}
+
+fn matrix_multiply(a: &[[i32; 2]; 2], b: &[[i32; 2]; 2]) -> [[i32; 2]; 2] {
+    let mut c = [[0; 2]; 2];
+    for i in 0..2 {
+        for j in 0..2 {
+            for k in 0..2 {
+                c[i][j] += a[i][k] * b[k][j];
+            }
+        }
+    }
+    c
 }
 
 #[cfg(test)]

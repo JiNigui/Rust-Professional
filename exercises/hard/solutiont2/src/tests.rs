@@ -29,6 +29,7 @@ mod tests {
             let result = find_max_prime_factor(*input);
             let duration = start.elapsed();
 
+            println!("Input: {}, Expected: {}, Result: {}, Duration: {:?}", input, expected, result, duration);
             // 时间超3s，判定不合格
             if duration <= Duration::new(3, 0) && result == *expected {
                 total_score += 10.0;
