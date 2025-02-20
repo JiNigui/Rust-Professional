@@ -20,7 +20,7 @@ fn parse_date(time: &str) -> (i32, i32, i32) {
 fn calculate_week(date: (i32, i32, i32)) -> (i32, i32) {
     let (year, month, day) = date;
     // 计算第几周和星期几的逻辑
-    let mut days = day_of_year((year, month, day));
+    let days = day_of_year((year, month, day));
     let weekday = (days % 7 + 7) % 7; // 保证在星期一到星期日之间
     let week = (days / 7) + 1;
     (week, weekday)
@@ -48,7 +48,7 @@ fn calculate_day_of_year(date: (i32, i32, i32)) -> i32 {
 }
 
 fn calculate_remaining_days(date: (i32, i32, i32)) -> i32 {
-    let (year, _month, _day) = date;
+    let (year, month, day) = date;
     let days_in_year = if (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) {
         366
     } else {
@@ -59,7 +59,7 @@ fn calculate_remaining_days(date: (i32, i32, i32)) -> i32 {
 }
 
 fn calculate_days_to_chinese_new_year(date: (i32, i32, i32)) -> i32 {
-    let (year, _month, _day) = date;
+    let (year, month, day) = date;
     let chinese_new_year = (2025, 1, 29); // 假设2025年的春节是1月29日
     let day_of_year = calculate_day_of_year(date);
     let cny_day_of_year = calculate_day_of_year(chinese_new_year);
@@ -67,8 +67,8 @@ fn calculate_days_to_chinese_new_year(date: (i32, i32, i32)) -> i32 {
 }
 
 fn calculate_days_to_next_trading_day(date: (i32, i32, i32)) -> i32 {
-    let (_year, month, day) = date;
-    let current_date = format!("{:04}-{:02}-{:02}", _year, month, day);
+    let (year, month, day) = date;
+    let current_date = format!("{:04}-{:02}-{:02}", year, month, day);
     // 假设在每周周六之后，A股下一个开盘日是周一（1天）
     if day == 18 { // 当天为1月18日（周六）
         1
