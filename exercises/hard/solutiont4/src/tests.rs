@@ -36,6 +36,7 @@ mod tests {
         for (input, expected) in TEST_CASES {
             let start = Instant::now();
             let result = time_info(*input);
+            println!("Calculated result: {}", result);
             let duration = start.elapsed();
 
             // 时间超0.2s，判定不合格

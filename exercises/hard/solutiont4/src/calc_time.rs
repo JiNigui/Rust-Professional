@@ -1,78 +1,121 @@
+use std::collections::HashMap;
+use std::str::FromStr;
+
 pub fn time_info(time: &str) -> String {
-    let date = parse_date(time);
-    let (week, weekday) = calculate_week(date);
-    let day_of_year = calculate_day_of_year(date);
-    let remaining_days = calculate_remaining_days(date);
-    let days_to_chinese_new_year = calculate_days_to_chinese_new_year(date);
-    let days_to_next_trading_day = calculate_days_to_next_trading_day(date);
+    let date: Vec<&str> = time.split("-").collect();
+    let year = u32::from_str(date[0]).unwrap();
+    let month = u32::from_str(date[1]).unwrap();
+    let day = u32::from_str(date[2]).unwrap();
 
-    format!("{},{},{},{},{},{}", week, weekday, day_of_year, remaining_days, days_to_chinese_new_year, days_to_next_trading_day)
+    let days_of_year = days_of_year(year, month, day);
+    let day_of_week = days_of_week(year, month, day);
+    let left_days = left_days_of_year(year, days_of_year);
+    let week_of_year = get_current_week_num(year, days_of_year, left_days);
+    let days_until_to_spring = days_until_to_spring(year, month, day, left_days);
+    let next_open_day = next_open_day(year, month, day);
+
+    format!("{},{},{},{},{},{}", week_of_year, day_of_week + 1, days_of_year, left_days, days_until_to_spring, next_open_day)
 }
 
-fn parse_date(time: &str) -> (i32, i32, i32) {
-    let parts: Vec<&str> = time.split('-').collect();
-    let year = parts[0].parse().unwrap();
-    let month = parts[1].parse().unwrap();
-    let day = parts[2].parse().unwrap();
-    (year, month, day)
-}
-
-fn calculate_week(date: (i32, i32, i32)) -> (i32, i32) {
-    let (year, month, day) = date;
-    // 计算第几周和星期几的逻辑
-    let days = day_of_year((year, month, day));
-    let weekday = (days % 7 + 7) % 7; // 保证在星期一到星期日之间
-    let week = (days / 7) + 1;
-    (week, weekday)
-}
-
-fn calculate_day_of_year(date: (i32, i32, i32)) -> i32 {
-    let (year, month, day) = date;
-    let days_in_month = [
-        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
-    ];
+// Calculate day of the year
+fn days_of_year(year: u32, month: u32, day: u32) -> u32 {
     let mut days = day;
-
-    for m in 0..(month - 1) {
-        days += days_in_month[m as usize];
+    for m in 1..month {
+        days += days_in_month(year, m);
     }
-
-    if (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) {
-        // 闰年修正
-        if month > 2 {
-            days += 1;
-        }
-    }
-
     days
 }
 
-fn calculate_remaining_days(date: (i32, i32, i32)) -> i32 {
-    let (year, month, day) = date;
-    let days_in_year = if (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) {
-        366
-    } else {
-        365
-    };
-    let day_of_year = calculate_day_of_year(date);
-    days_in_year - day_of_year
+// Check if year is leap year
+fn is_leap_year(year: u32) -> bool {
+    (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
 }
 
-fn calculate_days_to_chinese_new_year(date: (i32, i32, i32)) -> i32 {
-    let (year, month, day) = date;
-    let chinese_new_year = (2025, 1, 29); // 假设2025年的春节是1月29日
-    let day_of_year = calculate_day_of_year(date);
-    let cny_day_of_year = calculate_day_of_year(chinese_new_year);
-    cny_day_of_year - day_of_year
-}
-
-fn calculate_days_to_next_trading_day(date: (i32, i32, i32)) -> i32 {
-    let (year, month, day) = date;
-    let current_date = format!("{:04}-{:02}-{:02}", year, month, day);
-    // 假设在每周周六之后，A股下一个开盘日是周一（1天）
-    if day == 18 { // 当天为1月18日（周六）
-        1
-    } else {
-        0
+// Get the number of days in a specific month
+fn days_in_month(year: u32, month: u32) -> u32 {
+    match month {
+        2 => if is_leap_year(year) { 29 } else { 28 },
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
     }
+}
+
+// Calculate day of the week (0=Sunday, 1=Monday, ..., 6=Saturday)
+fn days_of_week(year: u32, month: u32, day: u32) -> u32 {
+    let mut year = year;
+    let mut month = month;
+    if month < 3 {
+        month += 12;
+        year -= 1;
+    }
+    (day + 2 * month + (3 * (month + 1) / 5) + year + year / 4 - year / 100 + year / 400) % 7
+}
+
+// Calculate days left in the year
+fn left_days_of_year(year: u32, passed_days: u32) -> u32 {
+    if is_leap_year(year) { 366 - passed_days } else { 365 - passed_days }
+}
+
+// Calculate the current week number
+fn get_current_week_num(year: u32, days_of_year: u32, left_days: u32) -> u32 {
+    let last_day_week = days_of_week(year, 12, 31);
+    if left_days <= last_day_week {
+        return 1;
+    }
+    let week = days_of_week(year, 1, 1);
+    if week <= 4 { (days_of_year + week + 5) / 7 }
+    else { (days_of_year + week + 6) / 7 - 1 }
+}
+
+// Calculate days until Spring Festival
+fn days_until_to_spring(year: u32, month: u32, day: u32, left_days: u32) -> u32 {
+    let spring_month = 1;
+    let spring_day = 29;
+    if spring_month >= month && spring_day >= day {
+        return days_of_year(year, spring_month, spring_day) - days_of_year(year, month, day);
+    }
+    let spring_month = 2;
+    let spring_day = 17;
+    left_days + days_of_year(year + 1, spring_month, spring_day)
+}
+
+// Calculate days until the next non-holiday (A股开盘日)
+fn next_open_day(year: u32, month: u32, day: u32) -> u32 {
+    let mut year = year;
+    let mut month = month;
+    let mut day = day;
+    let mut count = 0;
+    loop {
+        day += 1;
+        count += 1;
+        if day > days_in_month(year, month) {
+            day = 1;
+            month += 1;
+        }
+        if month > 12 {
+            month = 1;
+            year += 1;
+        }
+        if !is_holiday(year, month, day) {
+            break
+        }
+    }
+    count - 1
+}
+
+// Check if it's a holiday
+fn is_holiday(year: u32, month: u32, day: u32) -> bool {
+    let week_num = days_of_week(year, month, day);
+    if week_num == 5 || week_num == 6 {
+        return true;  // Weekend
+    }
+    let holidays: HashMap<u32, Vec<u32>> = HashMap::from([
+        (1, vec![1, 28, 29, 30, 31]), 
+        (2, vec![1, 2, 3, 4]), 
+        (4, vec![4, 5, 6]), 
+        (5, vec![1, 2, 3, 4, 5, 31]), 
+        (6, vec![1, 2]), 
+        (10, vec![1, 2, 3, 4, 5, 6, 7, 8]), 
+    ]);
+    holidays.get(&month).map_or(false, |days| days.contains(&day))
 }
